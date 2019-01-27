@@ -1,0 +1,78 @@
+body {
+  margin: 0;
+  font-family: "Avenir", "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
+    "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  padding: 20px;
+  box-sizing: border-box;
+  min-height: 1000vh;
+
+  font-size: 14px;
+
+  background: #fefefe;
+}
+
+.ProseMirror {
+  background: transparent;
+  border-radius: 3px;
+  height: auto;
+  position: relative;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  -webkit-font-variant-ligatures: none;
+  font-variant-ligatures: none;
+}
+
+.ProseMirror pre {
+  white-space: pre-wrap;
+}
+
+#editor {
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  padding: 5px;
+}
+
+label {
+  font-weight: 600;
+}
+
+text_line,
+heading,
+notegroup {
+  display: block;
+  /*  border: 1px solid #f0f0f0; */
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 3px 6px;
+  margin: 5px 0;
+}
+
+text_line:first-child {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+notegroup {
+  border-color: #66f;
+}
+
+heading {
+  font-weight: 600;
+}
+
+bold {
+  display: inline-block;
+  font-weight: 600;
+  color: #3c65c1;
+  background: #e9f0fb;
+  border-radius: 3px;
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+* {
+  outline: none;
+}
