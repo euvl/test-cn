@@ -4,16 +4,13 @@ import { Value } from "slate";
 import React, { Component } from "react";
 
 import Suggestions from "./Suggestions";
-import Heading from "./Heading";
 import Paragraph from "./Paragraph";
 
-import TermList from "./TermList";
-
-import schema from "./schema";
 import basicSchema from "./basicSchema";
 
 const CAPTURE_REGEX = /@(\S*)$/;
-const SEARCH_MARK_TYPE = "mentionContext";
+const SEARCH_MARK_TYPE = "SEARCH_MARK_TYPE";
+const CLINICAL_CODE_MARK_TYPE = "CLINICAL_CODE_MARK_TYPE";
 
 const getInput = value => {
   // In some cases, like if the node that was selected gets deleted,
@@ -36,34 +33,13 @@ function hasValidAncestors(value) {
     selection.start.key,
     // In this simple case, we only want mentions to live inside a paragraph.
     // This check can be adjusted for more complex rich text implementations.
-    node => node.type !== "paragraph" && node.type !== "heading"
+    node => node.type !== "paragraph"
   );
 
   return !invalidParent;
 }
 
-const schemaDefaultValue = {
-  document: {
-    nodes: [
-      {
-        object: "block",
-        type: "heading",
-        nodes: [
-          {
-            object: "text",
-            leaves: [
-              {
-                text: ""
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-};
-
-const basicSchemaDefaultValue = {
+const defaultValue = {
   document: {
     nodes: [
       {
@@ -87,48 +63,31 @@ const basicSchemaDefaultValue = {
 class ForcedLayout extends Component {
   editorRef = React.createRef();
 
-  constructor(props) {
-    super(props);
-
-    const defaultValue =
-      this.props.defaultValue ||
-      (this.props.type === "simple"
-        ? basicSchemaDefaultValue
-        : schemaDefaultValue);
-
-    this.state = {
-      defaultValue: Value.fromJSON(defaultValue),
-      terms: []
-    };
-  }
+  state = {
+    defaultValue: Value.fromJSON(defaultValue),
+    terms: []
+  };
 
   render() {
     return (
-      <div>
-        <label>{this.props.label}</label>
-
-        <div className="layout">
-          <div className="layout-left">
-            <SlateEditor
-              className="editor"
-              placeholder="Enter a title..."
-              defaultValue={this.state.defaultValue}
-              schema={this.props.type === "simple" ? basicSchema : schema}
-              ref={this.editorRef}
-              renderNode={this.renderNode}
-              renderMark={this.renderMark}
-              onKeyDown={this.onKeyDown}
-              onChange={this.onChange}
-            />
-            <Suggestions
-              anchor=".search-word-context"
-              terms={this.state.terms}
-              onSelect={this.insertMention}
-            />
-          </div>
-          <div className="layout-right">
-            <TermList terms={this.props.options} />
-          </div>
+      <div className="layout">
+        <div className="layout-left">
+          <SlateEditor
+            className="editor"
+            placeholder="Enter text..."
+            defaultValue={this.state.defaultValue}
+            schema={basicSchema}
+            ref={this.editorRef}
+            renderNode={this.renderNode}
+            renderMark={this.renderMark}
+            onKeyDown={this.onKeyDown}
+            onChange={this.onChange}
+          />
+          <Suggestions
+            anchor=".search-word-context"
+            terms={this.state.terms}
+            onSelect={this.insertMention}
+          />
         </div>
       </div>
     );
@@ -138,6 +97,18 @@ class ForcedLayout extends Component {
     if (props.mark.type === SEARCH_MARK_TYPE) {
       return (
         <span {...props.attributes} className="search-word-context">
+          {props.children}
+        </span>
+      );
+    }
+
+    if (props.mark.type === CLINICAL_CODE_MARK_TYPE) {
+      return (
+        <span
+          {...props.attributes}
+          className="clinical-code-context"
+          style={{ color: "pink" }}
+        >
           {props.children}
         </span>
       );
@@ -153,22 +124,6 @@ class ForcedLayout extends Component {
       .focus();
   };
 
-  insertHeading = (editor, heading = "") => {
-    return editor
-      .insertBlock("heading")
-      .insertText(heading)
-      .focus();
-  };
-
-  insertHeadingWithParagraph = (editor, heading = "", paragraph = "") => {
-    return editor
-      .insertBlock("heading")
-      .insertText(heading)
-      .insertBlock("paragraph")
-      .insertText(paragraph)
-      .focus();
-  };
-
   insertMention = term => {
     const value = this.state.value;
     const inputValue = getInput(value);
@@ -177,14 +132,8 @@ class ForcedLayout extends Component {
     const deleteCharacterCount = inputValue.length + 1;
 
     if (block) {
-      if (block.type === "heading") {
-        editor
-          .deleteBackward(value.startText.text.length)
-          .insertText(term.text)
-          .focus();
-      }
-
       if (block.type === "paragraph") {
+        /*
         editor.removeNodeByKey(block.key);
 
         this.insertHeadingWithParagraph(
@@ -194,6 +143,7 @@ class ForcedLayout extends Component {
         );
 
         editor.deleteBackward(deleteCharacterCount).focus();
+        */
       }
     }
   };
@@ -201,11 +151,7 @@ class ForcedLayout extends Component {
   onKeyDown = (event, editor, next) => {
     switch (event.key) {
       case "Enter":
-        if (this.props.type === "simple") {
-          return next();
-        } else {
-          return this.onEnter(event, editor, next);
-        }
+        return this.onEnter(event, editor, next);
       case "Tab":
         return this.onTab(event, editor, next);
       default:
@@ -214,15 +160,16 @@ class ForcedLayout extends Component {
   };
 
   onTab = (event, editor, next) => {
-    const { terms } = this.state;
+    const { value } = editor;
+    const { selection } = value;
+    const { start, end, isExpanded } = selection;
 
-    if (terms && terms.length > 0) {
-      this.insertMention(terms[0]);
-    }
-    /**
-     * GOTO: default
-     */
+    console.log(selection);
+
     event.preventDefault();
+    editor.toggleMark(CLINICAL_CODE_MARK_TYPE);
+
+    //  return next();
   };
 
   onEnter = (event, editor, next) => {
@@ -234,21 +181,16 @@ class ForcedLayout extends Component {
       return next();
     }
 
-    const { startBlock } = value;
-
     const isPreviousParagraphEmpty =
-      start.offset === 0 && end.offset === 0 && startBlock.text.length === 0;
+      start.offset === 0 &&
+      end.offset === 0 &&
+      value.startBlock.text.length === 0;
     /**
-     * Create heading if previous paragraph is empty
+     * Make sure we do not create multiple empty paragraphs
      */
     if (isPreviousParagraphEmpty) {
       event.preventDefault();
-      editor.setBlocks("heading");
       return;
-    }
-
-    if (startBlock.type !== "heading") {
-      return next();
     }
     /**
      * Create paragraph
@@ -326,11 +268,7 @@ class ForcedLayout extends Component {
   renderNode = (props, editor, next) => {
     const { attributes, children, node } = props;
 
-    window.editor = editor;
-
     switch (node.type) {
-      case "heading":
-        return <Heading {...attributes}>{children}</Heading>;
       case "paragraph":
         return <Paragraph {...attributes}>{children}</Paragraph>;
       default:

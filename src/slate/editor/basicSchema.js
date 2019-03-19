@@ -3,9 +3,9 @@ const schema = {
     nodes: [{ type: "paragraph" }],
     normalize: (editor, error) => {
       console.log(error);
-      ////    if (error.code == "child_type_invalid") {
-      //      editor.setNodeByKey(error.child.key, { type: "paragraph" });
-      //    }
+      if (error.code == "child_type_invalid") {
+        editor.setNodeByKey(error.child.key, { type: "paragraph" });
+      }
     }
   },
   blocks: {

@@ -17,6 +17,11 @@ body {
   box-sizing: border-box;
 }
 
+.clinical-code-context {
+  background: red;
+  color: yellow;
+}
+
 .editor {
   border: 1px solid #ddd;
   padding: 0 10px;
