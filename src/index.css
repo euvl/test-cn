@@ -79,7 +79,7 @@ body {
 .suggestion-li.focused {
   background-color: #f0f0f0 !important;
 }
-/*
+
 .suggestion-li.focused::after {
   vertical-align: middle;
 
@@ -96,7 +96,7 @@ body {
   border-radius: 3px;
   margin-left: 10px;
 }
-*/
+
 .suggestion-li:hover {
   background-color: #f9f9f9;
 }

@@ -4,13 +4,10 @@ import { Value } from "slate";
 import React, { Component } from "react";
 
 import Suggestions from "./Suggestions";
-import Heading from "./Heading";
-import Paragraph from "./Paragraph";
-
-import TermList from "./TermList";
+import Heading from "./nodes/Heading";
+import Paragraph from "./nodes/Paragraph";
 
 import schema from "./schema";
-import basicSchema from "./basicSchema";
 
 const CAPTURE_REGEX = /@(\S*)$/;
 const SEARCH_MARK_TYPE = "mentionContext";
@@ -42,6 +39,19 @@ function hasValidAncestors(value) {
   return !invalidParent;
 }
 
+function wrapClinicalCode(editor) {
+  editor.wrapInline({
+    type: "clinical-code",
+    data: {}
+  });
+
+  editor.moveToEnd();
+}
+
+function unwrapClinicalCode(editor) {
+  editor.unwrapInline("clinical-code");
+}
+
 const schemaDefaultValue = {
   document: {
     nodes: [
@@ -63,38 +73,13 @@ const schemaDefaultValue = {
   }
 };
 
-const basicSchemaDefaultValue = {
-  document: {
-    nodes: [
-      {
-        object: "block",
-        type: "paragraph",
-        nodes: [
-          {
-            object: "text",
-            leaves: [
-              {
-                text: ""
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-};
-
 class ForcedLayout extends Component {
   editorRef = React.createRef();
 
   constructor(props) {
     super(props);
 
-    const defaultValue =
-      this.props.defaultValue ||
-      (this.props.type === "simple"
-        ? basicSchemaDefaultValue
-        : schemaDefaultValue);
+    const defaultValue = this.props.defaultValue || schemaDefaultValue;
 
     this.state = {
       defaultValue: Value.fromJSON(defaultValue),
@@ -113,7 +98,7 @@ class ForcedLayout extends Component {
               className="editor"
               placeholder="Enter a title..."
               defaultValue={this.state.defaultValue}
-              schema={this.props.type === "simple" ? basicSchema : schema}
+              schema={schema}
               ref={this.editorRef}
               renderNode={this.renderNode}
               renderMark={this.renderMark}
@@ -125,9 +110,6 @@ class ForcedLayout extends Component {
               terms={this.state.terms}
               onSelect={this.insertMention}
             />
-          </div>
-          <div className="layout-right">
-            <TermList terms={this.props.options} />
           </div>
         </div>
       </div>
@@ -182,6 +164,8 @@ class ForcedLayout extends Component {
           .deleteBackward(value.startText.text.length)
           .insertText(term.text)
           .focus();
+
+        return;
       }
 
       if (block.type === "paragraph") {
@@ -194,6 +178,8 @@ class ForcedLayout extends Component {
         );
 
         editor.deleteBackward(deleteCharacterCount).focus();
+
+        return;
       }
     }
   };
@@ -333,6 +319,12 @@ class ForcedLayout extends Component {
         return <Heading {...attributes}>{children}</Heading>;
       case "paragraph":
         return <Paragraph {...attributes}>{children}</Paragraph>;
+      case "clinical-code":
+        return (
+          <span {...attributes} style={{ color: "#fff" }}>
+            {children}
+          </span>
+        );
       default:
         return next();
     }

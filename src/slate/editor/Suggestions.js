@@ -18,6 +18,28 @@ class Suggestions extends PureComponent {
     this.updatePosition();
   };
 
+  updatePosition() {
+    const { anchor, terms } = this.props;
+    const anchorElement = window.document.querySelector(anchor);
+
+    if (!anchorElement) {
+      return this.setState({
+        positionLeft: -10000,
+        positionTop: -10000,
+        focused: null
+      });
+    }
+
+    const anchorRect = anchorElement.getBoundingClientRect();
+    const focused = terms.length > 0 ? terms[0].code : null;
+
+    this.setState({
+      positionTop: anchorRect.bottom,
+      positionLeft: anchorRect.left,
+      focused
+    });
+  }
+
   render() {
     const root = window.document.getElementById("root");
     const { focused, positionTop, positionLeft } = this.state;
@@ -43,28 +65,6 @@ class Suggestions extends PureComponent {
       </ul>,
       root
     );
-  }
-
-  updatePosition() {
-    const { anchor, terms } = this.props;
-    const anchorElement = window.document.querySelector(anchor);
-
-    if (!anchorElement) {
-      return this.setState({
-        positionLeft: -10000,
-        positionTop: -10000,
-        focused: null
-      });
-    }
-
-    const anchorRect = anchorElement.getBoundingClientRect();
-    const focused = terms.length > 0 ? terms[0].code : null;
-
-    this.setState({
-      positionTop: anchorRect.bottom,
-      positionLeft: anchorRect.left,
-      focused
-    });
   }
 }
 
